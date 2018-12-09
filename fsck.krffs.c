@@ -202,13 +202,32 @@ int main(int argc, char **argv)
         beginning of the file.
      */
 
-    // TODO
+    if (file_system.node->magic != KRFFS_File_System_Magic) {
+        fprintf(stderr,
+            "The file system was not found at '%s'. The file system was not "
+            "created or the file is corrupted.\n",
+            path
+        );
+
+        exit_status = EXIT_FAILURE;
+
+        goto cleanup;
+    }
 
     /*
         Check that we have a root node at the beginning of the file.
      */
 
-    // TODO
+    if (!file_system.node) {
+        fprintf(stderr,
+            "The root node '%s' was not found.\n",
+            path
+        );
+
+        exit_status = EXIT_FAILURE;
+
+        goto cleanup;
+    }
 
     /*
         Perform file system checks by going through each metadata node and
@@ -237,6 +256,32 @@ int main(int argc, char **argv)
      */
 
     // TODO
+    // nonconsecutive link?
+    struct krffs_file_system *p_file_system = &file_system;
+    struct krffs_node *node = p_file_system->node;
+    while((node = krffs_get_next_node(p_file_system,node)) != p_file_system->node){
+        printf("Node: %x.\n",node);
+
+        // Find a link leading outside the file system space
+        if(!krffs_is_node_in_file_system(p_file_system,node)){
+            exit_status = KRFFS_Out_of_Range_Node_Error;
+            goto cleanup;
+        }
+
+        // Find a node with an invalid signature
+        if(node->magic != KRFFS_File_System_Magic){
+            exit_status = KRFFS_Invalid_Magic_Signature_Error;
+            goto cleanup;
+        }
+
+        // Find a node of an unknown type
+        if(node->type != KRFFS_Free_Node &&
+            node->type != KRFFS_Root_Node &&
+            node->type != KRFFS_Reserved_Node){
+            exit_status = KRFFS_Unknown_Node_Type_Error;
+            goto cleanup;
+        }
+    }
 
 cleanup:
     if (file_descriptor != -1) {
