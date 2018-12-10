@@ -289,13 +289,9 @@ int main(int argc, char **argv)
             goto cleanup;
         }
         prev_node = node;
-    }while((node = krffs_get_next_node(p_file_system,node)) != p_file_system->node);
 
     // The last node links to the first node
-    if(node != p_file_system->node){
-        exit_status = KRFFS_Invalid_Link_Error;
-        goto cleanup;
-    }
+    }while((node = krffs_get_next_node(p_file_system,node)) != p_file_system->node);
 
 cleanup:
     if (file_descriptor != -1) {
