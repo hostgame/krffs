@@ -255,12 +255,19 @@ int main(int argc, char **argv)
             * Found a node of an unknown type:                    -13
      */
 
-    // TODO
-    // nonconsecutive link?
     struct krffs_file_system *p_file_system = &file_system;
     struct krffs_node *node = p_file_system->node;
-    while((node = krffs_get_next_node(p_file_system,node)) != p_file_system->node){
-        printf("Node: %x.\n",node);
+    struct krffs_node *prev_node = p_file_system->node;
+    
+    do {
+        // printf("Node: %x.\n",node);
+        // printf("Prev node: %x.\n",prev_node);
+
+        // Find a nonconsecutive link
+        if(prev_node > node){
+            exit_status = KRFFS_Invalid_Link_Error;
+            goto cleanup;
+        }
 
         // Find a link leading outside the file system space
         if(!krffs_is_node_in_file_system(p_file_system,node)){
@@ -281,6 +288,13 @@ int main(int argc, char **argv)
             exit_status = KRFFS_Unknown_Node_Type_Error;
             goto cleanup;
         }
+        prev_node = node;
+    }while((node = krffs_get_next_node(p_file_system,node)) != p_file_system->node);
+
+    // The last node links to the first node
+    if(node != p_file_system->node){
+        exit_status = KRFFS_Invalid_Link_Error;
+        goto cleanup;
     }
 
 cleanup:
@@ -304,6 +318,6 @@ cleanup:
             );
         }
     }
-
+    printf("%d\n", exit_status);
     return exit_status;
 }
